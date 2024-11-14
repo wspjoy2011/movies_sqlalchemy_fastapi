@@ -1,9 +1,9 @@
 from logging.config import fileConfig
 from alembic import context
 
-from database.session import engine
+from database.session import engine_sync
 from database.base import Base
-from database.models import movies
+from database.listeners import movies # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -38,7 +38,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    connectable = engine
+    connectable = engine_sync
 
     with connectable.connect() as connection:
         context.configure(
@@ -57,7 +57,7 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    connectable = engine
+    connectable = engine_sync
 
     with connectable.connect() as connection:
         context.configure(

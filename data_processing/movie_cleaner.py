@@ -1,30 +1,40 @@
-from sqlalchemy.orm import Session
+import asyncio
+
+from sqlalchemy import delete
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import SQLAlchemyError
 
 from database.models.movies import Movie, Genre, Director, Star, Certification, MovieGenre, MovieDirector, MovieStar
-from database.session import SessionLocal
+from database.session import get_session
 
 
 class MovieDatabaseCleaner:
-    def __init__(self, session: Session):
+    def __init__(self, session: AsyncSession):
         self._session = session
 
-    def clean_all_movie_data(self):
-        self._session.query(MovieGenre).delete()
-        self._session.query(MovieDirector).delete()
-        self._session.query(MovieStar).delete()
+    async def clean_all_movie_data(self):
+        try:
+            await self._session.execute(delete(MovieGenre))
+            await self._session.execute(delete(MovieDirector))
+            await self._session.execute(delete(MovieStar))
+            await self._session.execute(delete(Movie))
+            await self._session.execute(delete(Genre))
+            await self._session.execute(delete(Director))
+            await self._session.execute(delete(Star))
+            await self._session.execute(delete(Certification))
 
-        self._session.query(Movie).delete()
-        self._session.query(Genre).delete()
-        self._session.query(Director).delete()
-        self._session.query(Star).delete()
-        self._session.query(Certification).delete()
+            await self._session.commit()
+        except SQLAlchemyError as e:
+            await self._session.rollback()
+            print(f"Error occurred: {e}")
+            raise
 
-        self._session.commit()
+
+async def main():
+    async with get_session() as session:
+        cleaner = MovieDatabaseCleaner(session)
+        await cleaner.clean_all_movie_data()
 
 
 if __name__ == '__main__':
-    session = SessionLocal()
-    cleaner = MovieDatabaseCleaner(session)
-    cleaner.clean_all_movie_data()
-
-    session.close()
+    asyncio.run(main())

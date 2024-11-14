@@ -1,7 +1,9 @@
+import asyncio
 from typing import List, Optional
 
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 
 from database.exceptions.movies import CreateMovieError
 from database.models.movies import Movie, Certification
@@ -11,13 +13,13 @@ from database.utils import object_as_dict
 
 
 class MovieRepository:
-    def __init__(self, session: Session):
+    def __init__(self, session: AsyncSession):
         self._session = session
 
-    def create_movie(self, movie_dto: MovieDTO) -> MovieEntity:
+    async def create_movie(self, movie_dto: MovieDTO) -> MovieEntity:
         try:
-            with self._session.begin():
-                certification_entity = self._get_or_create_certification_id(movie_dto.certification)
+            async with self._session.begin():
+                certification_entity = await self._get_or_create_certification_id(movie_dto.certification)
                 movie = Movie(
                     name=movie_dto.name,
                     year=movie_dto.year,
@@ -31,36 +33,38 @@ class MovieRepository:
                 )
 
                 self._session.add(movie)
-                self._session.flush()  # Writes data to the database, but leaves the transaction open
-                self._session.refresh(movie)  # Updates the object with data, such as an ID
-                self._session.commit()  # Ends the transaction, making the changes final
+                await self._session.flush()
+                await self._session.refresh(movie)
         except SQLAlchemyError as e:
-            self._session.rollback()
+            await self._session.rollback()
             print(f"General SQLAlchemy error: {e}")
             raise CreateMovieError(str(e))
         return MovieEntity(**object_as_dict(movie))
 
-    def get_movie_by_id(self, movie_id: int) -> Optional[MovieEntity]:
-        movie = self._session.query(Movie).filter(Movie.id == movie_id).first()
+    async def get_movie_by_id(self, movie_id: int) -> Optional[MovieEntity]:
+        result = await self._session.execute(select(Movie).filter(Movie.id == movie_id))
+        movie = result.scalars().first()
         return MovieEntity(**object_as_dict(movie)) if movie else None
 
-    def get_all_movies(self) -> List[MovieEntity]:
-        movies = self._session.query(Movie).all()
+    async def get_all_movies(self) -> List[MovieEntity]:
+        result = await self._session.execute(select(Movie))
+        movies = result.scalars().all()
         return [MovieEntity(**object_as_dict(movie)) for movie in movies]
 
-    def _get_or_create_certification_id(self, certification_name: str) -> CertificationEntity:
-        certification = self._session.query(Certification).filter_by(name=certification_name).first()
+    async def _get_or_create_certification_id(self, certification_name: str) -> CertificationEntity:
+        result = await self._session.execute(select(Certification).filter_by(name=certification_name))
+        certification = result.scalars().first()
         if certification:
             return CertificationEntity(**object_as_dict(certification))
 
         new_certification = Certification(name=certification_name)
         self._session.add(new_certification)
-        self._session.commit()
-        self._session.refresh(new_certification)
+        await self._session.flush()
+        await self._session.refresh(new_certification)
         return CertificationEntity(**object_as_dict(new_certification))
 
 
-if __name__ == '__main__':
+async def main():
     movie_data = MovieDTO(
         name="The Great Adventure",
         year=2023,
@@ -76,8 +80,11 @@ if __name__ == '__main__':
         description="A thrilling story of a group of friends who set out on a journey to uncover hidden secrets."
     )
 
-    with get_session() as local_session:
+    async with get_session() as local_session:
         movie_repo = MovieRepository(local_session)
-        # print(movie_repo.get_all_movies())
-        new_movie_entity = movie_repo.create_movie(movie_data)
+        new_movie_entity = await movie_repo.create_movie(movie_data)
         print(new_movie_entity)
+
+
+if __name__ == '__main__':
+    asyncio.run(main())
