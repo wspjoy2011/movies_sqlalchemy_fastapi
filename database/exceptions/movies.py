@@ -1,2 +1,0 @@
-class CreateMovieError(Exception):
-    pass

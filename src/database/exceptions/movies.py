@@ -1,0 +1,2 @@
+class CreateMovieError(Exception):
+    pass

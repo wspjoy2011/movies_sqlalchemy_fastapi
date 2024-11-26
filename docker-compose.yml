@@ -10,7 +10,7 @@ services:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres_sqlalchemy_data:/var/lib/postgresql/data/
     networks:
-      - sqlalchemy_network
+      - fastapi_network
 
   pgadmin:
     image: dpage/pgadmin4
@@ -24,7 +24,39 @@ services:
     volumes:
       - pgadmin_sqlalchemy_data:/var/lib/pgadmin
     networks:
-      - sqlalchemy_network
+      - fastapi_network
+
+  web:
+    restart: always
+    build: .
+    container_name: backend_fastapi
+    command: ["/commands/run_web_server_dev.sh"]
+    environment:
+      - PYTHONUNBUFFERED=True
+      - WATCHFILES_FORCE_POLLING=true
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/usr/src/fastapi
+    depends_on:
+      - db
+    networks:
+      - fastapi_network
+
+  migrator:
+    build: .
+    container_name: alembic_migrator
+    command: ["/commands/run_migration.sh"]
+    depends_on:
+      - db
+    volumes:
+      - .:/usr/src/fastapi
+    env_file:
+      - .env
+    networks:
+      - fastapi_network
 
 
 volumes:
@@ -34,5 +66,5 @@ volumes:
     driver: local
 
 networks:
-  sqlalchemy_network:
+  fastapi_network:
     driver: bridge
