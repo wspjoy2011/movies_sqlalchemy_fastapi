@@ -2,7 +2,7 @@ import os
 import uuid
 from pathlib import Path
 
-from app.handlers.interfaces import InterfaceAvatarFileHandler
+from apps.accounts.handlers.interfaces import InterfaceAvatarFileHandler
 
 
 class AvatarFileHandler(InterfaceAvatarFileHandler):

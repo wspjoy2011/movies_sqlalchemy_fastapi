@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.accounts.controllers import (
+from apps.accounts.controllers import (
     create_user_controller,
     activate_user_controller,
     create_profile_controller,

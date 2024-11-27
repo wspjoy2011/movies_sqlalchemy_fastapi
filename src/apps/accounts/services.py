@@ -1,23 +1,23 @@
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from app.accounts.dto import UserProfileCreateDTO, UserProfileDTO
-from app.accounts.exceptions import (
+from apps.accounts.dto import UserProfileCreateDTO, UserProfileDTO
+from apps.accounts.exceptions import (
     UserAlreadyExists,
     ActivationError,
     InvalidCredentialsError, UserProfileAlreadyExists
 )
-from app.accounts.interfaces import (
+from apps.accounts.interfaces import (
     InterfaceAuthManager,
     InterfaceAccountsServices,
     InterfaceAuthService, InterfaceUserProfileRepository
 )
-from app.accounts.repositories import (
+from apps.accounts.repositories import (
     InterfaceUserRepository,
     InterfaceActivationTokenRepository
 )
-from app.accounts.notifications import InterfaceEmailSender
-from app.accounts.schemas import (
+from apps.accounts.notifications import InterfaceEmailSender
+from apps.accounts.schemas import (
     UserCreateSerializer,
     UserResponseSerializer,
     TokenPairRequestSerializer,
@@ -25,7 +25,7 @@ from app.accounts.schemas import (
     TokenAccessRequestSerializer,
     TokenAccessResponseSerializer
 )
-from app.handlers.interfaces import InterfaceAvatarFileHandler
+from apps.accounts.handlers.interfaces import InterfaceAvatarFileHandler
 
 
 class AccountsServices(InterfaceAccountsServices):

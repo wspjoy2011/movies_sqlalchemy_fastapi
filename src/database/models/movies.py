@@ -1,8 +1,9 @@
 import uuid
 
-from sqlalchemy import Column, String, Integer, Float, Text, ForeignKey, UniqueConstraint, event
+from sqlalchemy import Column, String, Integer, Float, Text, ForeignKey, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, validates
+from sqlalchemy.types import DECIMAL
 
 from database.base import Base
 from database.validators import movies as validators
@@ -52,6 +53,7 @@ class Movie(Base):
     meta_score = Column(Float, nullable=True)
     gross = Column(Float, nullable=True)
     description = Column(Text, nullable=False)
+    price = Column(DECIMAL(10, 2), nullable=True)
 
     certification_id = Column(Integer, ForeignKey('certifications.id', ondelete='RESTRICT'), nullable=False)
     certification = relationship('Certification', back_populates='movies')

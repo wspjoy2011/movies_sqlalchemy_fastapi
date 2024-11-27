@@ -3,7 +3,7 @@ from datetime import date
 from fastapi import Form, UploadFile, File, HTTPException
 from pydantic import BaseModel, field_validator, EmailStr
 
-from app.accounts.validators import (
+from apps.accounts.validators import (
     validate_username,
     validate_password_strength,
     validate_name,

@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+
 from apps.accounts.routes import router as user_router
 
 app = FastAPI(

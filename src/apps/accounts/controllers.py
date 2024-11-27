@@ -1,11 +1,11 @@
 from fastapi import Depends, HTTPException, Request, status
 
-from app.accounts.dependencies import get_accounts_service, get_auth_service
-from app.accounts.dto import UserProfileCreateDTO
-from app.accounts.exceptions import UserAlreadyExists, ActivationError, InvalidCredentialsError, TokenExpiredError, \
+from apps.accounts.dependencies import get_accounts_service, get_auth_service
+from apps.accounts.dto import UserProfileCreateDTO
+from apps.accounts.exceptions import UserAlreadyExists, ActivationError, InvalidCredentialsError, TokenExpiredError, \
     InvalidTokenError, UserProfileAlreadyExists
-from app.accounts.services import InterfaceAccountsServices, InterfaceAuthService
-from app.accounts.schemas import UserCreateSerializer, ProfileCreateSerializer, TokenPairRequestSerializer, \
+from apps.accounts.interfaces import InterfaceAccountsServices, InterfaceAuthService
+from apps.accounts.schemas import UserCreateSerializer, ProfileCreateSerializer, TokenPairRequestSerializer, \
     TokenAccessRequestSerializer, TokenPairResponseSerializer, ProfileResponseSerializer
 
 

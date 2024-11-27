@@ -11,6 +11,12 @@ services:
       - postgres_sqlalchemy_data:/var/lib/postgresql/data/
     networks:
       - fastapi_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   pgadmin:
     image: dpage/pgadmin4
@@ -20,7 +26,8 @@ services:
     env_file:
       - .env
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
       - pgadmin_sqlalchemy_data:/var/lib/pgadmin
     networks:
@@ -30,31 +37,36 @@ services:
     restart: always
     build: .
     container_name: backend_fastapi
-    command: ["/commands/run_web_server_dev.sh"]
+    command: ["/bin/bash", "/commands/run_web_server_dev.sh"]
     environment:
       - PYTHONUNBUFFERED=True
+      - PYTHONPATH=/usr/src/fastapi
       - WATCHFILES_FORCE_POLLING=true
     env_file:
       - .env
     ports:
       - "8000:8000"
     volumes:
-      - .:/usr/src/fastapi
+      - ./src:/usr/src/fastapi
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - fastapi_network
 
   migrator:
     build: .
     container_name: alembic_migrator
-    command: ["/commands/run_migration.sh"]
+    command: ["/bin/bash", "/commands/run_migration.sh"]
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
-      - .:/usr/src/fastapi
+      - ./src:/usr/src/fastapi
     env_file:
       - .env
+    environment:
+      - PYTHONPATH=/usr/src/fastapi
     networks:
       - fastapi_network
 
