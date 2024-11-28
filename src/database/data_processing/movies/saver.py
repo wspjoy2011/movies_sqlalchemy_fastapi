@@ -1,7 +1,8 @@
 import asyncio
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError, OperationalError, DataError, SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError, OperationalError, DataError
 
 from config.settings import PATH_TO_MOVIES_CSV_FILE
 from database.models.movies import Genre, Director, Star, Certification, Movie, MovieGenre, MovieDirector, MovieStar
@@ -11,11 +12,63 @@ from database.data_processing.mappers.csv_mapper import MovieCSVMapper
 
 
 class MovieDatabaseSaver:
+    """
+    A class responsible for saving movie-related data to the database.
+
+    Attributes:
+        session (AsyncSession): The asynchronous database session used for operations.
+    """
+
     def __init__(self, session: AsyncSession):
+        """
+        Initializes the MovieDatabaseSaver with a given database session.
+
+        Args:
+            session (AsyncSession): The asynchronous database session.
+        """
         self._session = session
 
-    async def save_movies(self, movies_dto: MoviesDTO):
+    async def is_database_populated(self) -> bool:
+        """
+        Checks if the database is already populated with data.
+
+        Iterates through key tables (Genre, Director, Star, Certification, Movie) and
+        verifies if at least one record exists in any of them.
+
+        Returns:
+            bool: True if the database is populated, False otherwise.
+        """
         try:
+            for model in [Genre, Director, Star, Certification, Movie]:
+                query = select(model).limit(1)
+                result = await self._session.execute(query)
+                if result.scalar() is not None:
+                    continue
+                return False
+            return True
+        except SQLAlchemyError as e:
+            print(f"Error checking database population: {e}")
+            return False
+
+    async def save_movies(self, movies_dto: MoviesDTO):
+        """
+        Saves movies and related data (genres, directors, stars, certifications) to the database.
+
+        Args:
+            movies_dto (MoviesDTO): The data transfer object containing movie information.
+
+        Raises:
+            IntegrityError: If there is a database integrity constraint violation.
+            OperationalError: If there is an operational error with the database.
+            DataError: If there is an error in the data format.
+            SQLAlchemyError: For other general SQLAlchemy-related exceptions.
+            Exception: For unexpected errors.
+        """
+        try:
+            if self._session.in_transaction():
+                print("Rolling back existing transaction.")
+                await self._session.rollback()
+
             async with self._session.begin():
                 genre_map = {name: Genre(name=name) for name in movies_dto.genres}
                 director_map = {name: Director(name=name) for name in movies_dto.directors}
@@ -38,7 +91,8 @@ class MovieDatabaseSaver:
                         meta_score=movie_dto.meta_score,
                         gross=movie_dto.gross,
                         description=movie_dto.description,
-                        certification_id=certification_map[movie_dto.certification].id
+                        certification_id=certification_map[movie_dto.certification].id,
+                        price=movie_dto.price
                     )
                     self._session.add(movie)
                     await self._session.flush()
@@ -77,12 +131,21 @@ class MovieDatabaseSaver:
 
 
 async def main():
-    mapper = MovieCSVMapper(PATH_TO_MOVIES_CSV_FILE)
-    movies_dto = mapper.read_csv_and_map_to_dto()
+    """
+    The main function to populate the database with movie data.
 
+    It reads data from a CSV file, maps it to a DTO, and saves it to the database.
+    Before saving, it checks if the database is already populated to avoid duplication.
+    """
     async with get_session() as session:
         saver = MovieDatabaseSaver(session)
-        await saver.save_movies(movies_dto)
+        if await saver.is_database_populated():
+            print("Database is already populated. Skipping data insertion.")
+        else:
+            print("Database is empty. Populating with data...")
+            mapper = MovieCSVMapper(PATH_TO_MOVIES_CSV_FILE)
+            movies_dto = mapper.read_csv_and_map_to_dto()
+            await saver.save_movies(movies_dto)
 
 
 if __name__ == '__main__':

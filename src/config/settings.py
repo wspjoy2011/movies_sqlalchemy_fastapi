@@ -19,6 +19,10 @@ POSTGRES_HOST = os.environ['POSTGRES_HOST']
 POSTGRES_DB_PORT = os.environ['POSTGRES_DB_PORT']
 POSTGRES_DB = os.environ['POSTGRES_DB']
 
+REDIS_HOST=os.environ['REDIS_HOST']
+REDIS_PASSWORD=os.environ['REDIS_PASSWORD']
+REDIS_PORT=int(os.environ['REDIS_PORT'])
+
 EMAIL_HOST = os.getenv('EMAIL_HOST')
 EMAIL_PORT = os.getenv('EMAIL_PORT')
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')

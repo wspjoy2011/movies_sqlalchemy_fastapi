@@ -5,23 +5,34 @@ ALEMBIC_CONFIG="/usr/src/fastapi/alembic.ini"
 
 echo "Checking for changes before generating a migration..."
 
-# Make sure the migrations folder exists
+# Ensure the migrations folder exists
 if [ ! -d "/usr/src/fastapi/alembic/versions" ]; then
     echo "Migrations folder does not exist. Creating it..."
     mkdir -p /usr/src/fastapi/alembic/versions
 fi
 
-# Check if the folder is empty
-if [ -z "$(ls -A /usr/src/fastapi/alembic/versions)" ]; then
-    echo "No existing migrations found. Generating the first migration..."
-    alembic -c $ALEMBIC_CONFIG revision --autogenerate -m "initial migration"
+# Check if the alembic_version table exists in the database
+if ! psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "\dt" | grep -q "alembic_version"; then
+    echo "Alembic version table not found. Applying all migrations..."
 
-    echo "Applying the first migration..."
+    # Check if there are existing migration files
+    if [ -z "$(ls -A /usr/src/fastapi/alembic/versions)" ]; then
+        echo "No migration files found. Generating initial migration..."
+        alembic -c $ALEMBIC_CONFIG revision --autogenerate -m "initial migration"
+    fi
+
+    echo "Applying all migrations..."
     alembic -c $ALEMBIC_CONFIG upgrade head
+
+    # Run database saver script only if alembic_version table was just created
+    echo "Running database saver script..."
+    python -m database.data_processing.movies.saver
+    echo "Database saver script completed."
+
     exit 0
 fi
 
-# Generate time migration
+# Generate temporary migration
 if ! alembic -c $ALEMBIC_CONFIG revision --autogenerate -m "temp_migration"; then
     echo "Error generating migration. Exiting."
     exit 1
@@ -38,3 +49,8 @@ else
     echo "Changes detected. Applying migration."
     alembic -c $ALEMBIC_CONFIG upgrade head
 fi
+
+# Run database saver script
+echo "Running database saver script..."
+python -m database.data_processing.movies.saver
+echo "Database saver script completed."

@@ -1,6 +1,7 @@
 import asyncio
 from typing import List, Optional
 
+from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -8,7 +9,7 @@ from sqlalchemy.future import select
 from database.exceptions.movies import CreateMovieError
 from database.models.movies import Movie, Certification
 from database.session import get_session
-from dto.movie import MovieEntity, MovieDTO, CertificationEntity
+from apps.movies.dto.movie import MovieEntity, MovieDTO, CertificationEntity
 from database.utils import object_as_dict
 
 
@@ -29,7 +30,8 @@ class MovieRepository:
                     meta_score=movie_dto.meta_score,
                     gross=movie_dto.gross,
                     description=movie_dto.description,
-                    certification_id=certification_entity.id
+                    certification_id=certification_entity.id,
+                    price=movie_dto.price
                 )
 
                 self._session.add(movie)
@@ -63,6 +65,33 @@ class MovieRepository:
         await self._session.refresh(new_certification)
         return CertificationEntity(**object_as_dict(new_certification))
 
+    async def get_movies_with_pagination(self, offset: int, limit: int) -> list[MovieEntity]:
+        """
+        Retrieve movies with pagination.
+
+        Args:
+            offset (int): The offset for the query.
+            limit (int): The maximum number of items to retrieve.
+
+        Returns:
+            list[MovieEntity]: A list of paginated movies.
+        """
+        result = await self._session.execute(
+            select(Movie).offset(offset).limit(limit)
+        )
+        movies = result.scalars().all()
+        return [MovieEntity(**object_as_dict(movie)) for movie in movies]
+
+    async def get_total_count(self) -> int:
+        """
+        Retrieve the total count of movies in the database.
+
+        Returns:
+            int: The total count of movies.
+        """
+        result = await self._session.execute(select(func.count(Movie.id)))
+        return result.scalar()
+
 
 async def main():
     movie_data = MovieDTO(
@@ -77,7 +106,8 @@ async def main():
         certification="PG-13",
         directors={"Jane Doe", "John Smith"},
         stars={"Alice Johnson", "Bob Brown", "Charlie White"},
-        description="A thrilling story of a group of friends who set out on a journey to uncover hidden secrets."
+        description="A thrilling story of a group of friends who set out on a journey to uncover hidden secrets.",
+        price=None
     )
 
     async with get_session() as local_session:
@@ -86,5 +116,5 @@ async def main():
         print(new_movie_entity)
 
 
-if __name__ == '__main__':
-    asyncio.run(main())
+# if __name__ == '__main__':
+#     asyncio.run(main())
