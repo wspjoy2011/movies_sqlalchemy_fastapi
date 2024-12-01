@@ -22,9 +22,10 @@ from apps.accounts.services import (
 )
 
 from database.session import get_session as get_db
-from config.settings import MEDIA_PROFILE_DIR
+from config.settings import get_settings, Settings
 from apps.accounts.handlers.file_handlers import AvatarFileHandler
 from apps.accounts.handlers.interfaces import InterfaceAvatarFileHandler
+
 
 
 async def get_user_repository(
@@ -53,8 +54,10 @@ async def get_auth_manager() -> InterfaceAuthManager:
     return JWTAuthManager()
 
 
-async def get_avatar_file_handler() -> InterfaceAvatarFileHandler:
-    return AvatarFileHandler(media_profile_dir=MEDIA_PROFILE_DIR)
+async def get_avatar_file_handler(
+        settings: Settings = Depends(get_settings)
+) -> InterfaceAvatarFileHandler:
+    return AvatarFileHandler(media_profile_dir=settings.MEDIA_PROFILE_DIR)
 
 
 async def get_accounts_service(

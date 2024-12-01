@@ -16,7 +16,7 @@ class JWTAuthManager(InterfaceAuthManager):
     @classmethod
     def _create_token(cls, data: dict, secret_key: str, expires_delta: Optional[timedelta] = None) -> str:
         to_encode = data.copy()
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now() + expires_delta
         to_encode.update({"exp": expire})
         encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=cls._ALGORITHM)
         return encoded_jwt

@@ -4,22 +4,22 @@ from typing import Union
 from uuid import UUID
 
 import aioredis
-from fastapi import Query
+from fastapi import Query, Depends
 
 from apps.movies.repositories.movie import MovieRepository
-from config.settings import REDIS_HOST, REDIS_PORT, REDIS_PASSWORD
+from config.settings import get_settings, Settings
 from database.session import get_session
 from apps.movies.services.movies import MovieService
 from apps.movies.schemas import MovieListSchemaResponse, MovieSchema
 
 
-async def get_redis_connection() -> aioredis.Redis:
+async def get_redis_connection(settings: Settings = Depends(get_settings)) -> aioredis.Redis:
     """
     Establish and return a connection to Redis.
     """
     return await aioredis.from_url(
-        f"redis://{REDIS_HOST}:{REDIS_PORT}",
-        password=REDIS_PASSWORD,
+        f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}",
+        password=settings.REDIS_PASSWORD,
         decode_responses=True
     )
 

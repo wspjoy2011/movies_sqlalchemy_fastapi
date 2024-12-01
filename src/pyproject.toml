@@ -104,6 +104,7 @@ virtualenv = "20.28.0"
 watchfiles = "0.24.0"
 websockets = "14.1"
 zipp = "3.21.0"
+pydantic-settings = "^2.6.1"
 
 [build-system]
 requires = ["poetry-core"]

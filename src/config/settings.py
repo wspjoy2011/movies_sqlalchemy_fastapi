@@ -1,29 +1,34 @@
-import os
 from pathlib import Path
-
-from dotenv import load_dotenv
-
-BASE_DIR = Path(__file__).parent.parent
-
-PATH_TO_MOVIES_CSV_FILE = str(BASE_DIR / 'database' / 'data_processing' / 'files' /'movies.csv')
-
-MEDIA_DIR = BASE_DIR / 'media'
-MEDIA_PROFILE_DIR = MEDIA_DIR / 'profile'
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-load_dotenv(BASE_DIR / '.env')
+class Settings(BaseSettings):
+    # Path to folders and files
+    BASE_DIR: Path = Path(__file__).parent.parent
+    PATH_TO_MOVIES_CSV_FILE: str = str(BASE_DIR / 'database' / 'data_processing' / 'files' / 'movies.csv')
+    MEDIA_DIR: Path = BASE_DIR / 'media'
+    MEDIA_PROFILE_DIR: Path = MEDIA_DIR / 'profile'
 
-POSTGRES_USER = os.environ['POSTGRES_USER']
-POSTGRES_PASSWORD = os.environ['POSTGRES_PASSWORD']
-POSTGRES_HOST = os.environ['POSTGRES_HOST']
-POSTGRES_DB_PORT = os.environ['POSTGRES_DB_PORT']
-POSTGRES_DB = os.environ['POSTGRES_DB']
+    # Postgresql
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str
+    POSTGRES_HOST: str
+    POSTGRES_DB_PORT: int
+    POSTGRES_DB: str
 
-REDIS_HOST=os.environ['REDIS_HOST']
-REDIS_PASSWORD=os.environ['REDIS_PASSWORD']
-REDIS_PORT=int(os.environ['REDIS_PORT'])
+    # Redis
+    REDIS_HOST: str
+    REDIS_PASSWORD: str
+    REDIS_PORT: int
 
-EMAIL_HOST = os.getenv('EMAIL_HOST')
-EMAIL_PORT = os.getenv('EMAIL_PORT')
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+    # Email
+    EMAIL_HOST: str
+    EMAIL_PORT: int
+    EMAIL_HOST_USER: str
+    EMAIL_HOST_PASSWORD: str
+
+    # model_config = SettingsConfigDict(env_file=BASE_DIR.parent / '.env', extra='ignore')
+
+
+def get_settings() -> BaseSettings:
+    return Settings()

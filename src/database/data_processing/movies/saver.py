@@ -1,14 +1,16 @@
 import asyncio
 
+from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError, OperationalError, DataError
 
-from config.settings import PATH_TO_MOVIES_CSV_FILE
+from config.settings import Settings, get_setting
 from database.models.movies import Genre, Director, Star, Certification, Movie, MovieGenre, MovieDirector, MovieStar
 from database.session import get_session
 from apps.movies.dto.movie import MoviesDTO
 from database.data_processing.mappers.csv_mapper import MovieCSVMapper
+
 
 
 class MovieDatabaseSaver:
@@ -130,20 +132,21 @@ class MovieDatabaseSaver:
             raise
 
 
-async def main():
+async def main(settings: Settings = Depends(get_setting)):
     """
     The main function to populate the database with movie data.
 
     It reads data from a CSV file, maps it to a DTO, and saves it to the database.
     Before saving, it checks if the database is already populated to avoid duplication.
     """
+
     async with get_session() as session:
         saver = MovieDatabaseSaver(session)
         if await saver.is_database_populated():
             print("Database is already populated. Skipping data insertion.")
         else:
             print("Database is empty. Populating with data...")
-            mapper = MovieCSVMapper(PATH_TO_MOVIES_CSV_FILE)
+            mapper = MovieCSVMapper(settings.PATH_TO_MOVIES_CSV_FILE)
             movies_dto = mapper.read_csv_and_map_to_dto()
             await saver.save_movies(movies_dto)
 
