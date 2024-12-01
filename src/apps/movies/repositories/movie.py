@@ -1,4 +1,3 @@
-import asyncio
 from typing import List, Optional
 
 from sqlalchemy import func
@@ -91,30 +90,3 @@ class MovieRepository:
         """
         result = await self._session.execute(select(func.count(Movie.id)))
         return result.scalar()
-
-
-async def main():
-    movie_data = MovieDTO(
-        name="The Great Adventure",
-        year=2023,
-        time=120,
-        imdb=9.5,
-        votes=35,
-        meta_score=76.0,
-        gross=1200000.0,
-        genres={"Adventure", "Drama"},
-        certification="PG-13",
-        directors={"Jane Doe", "John Smith"},
-        stars={"Alice Johnson", "Bob Brown", "Charlie White"},
-        description="A thrilling story of a group of friends who set out on a journey to uncover hidden secrets.",
-        price=None
-    )
-
-    async with get_session() as local_session:
-        movie_repo = MovieRepository(local_session)
-        new_movie_entity = await movie_repo.create_movie(movie_data)
-        print(new_movie_entity)
-
-
-# if __name__ == '__main__':
-#     asyncio.run(main())

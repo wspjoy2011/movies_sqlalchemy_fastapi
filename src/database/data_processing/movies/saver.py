@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError, OperationalError, DataError
 
-from config.settings import Settings, get_setting
+from config.dependencies import Settings, get_settings
 from database.models.movies import Genre, Director, Star, Certification, Movie, MovieGenre, MovieDirector, MovieStar
 from database.session import get_session
 from apps.movies.dto.movie import MoviesDTO
@@ -132,7 +132,7 @@ class MovieDatabaseSaver:
             raise
 
 
-async def main(settings: Settings = Depends(get_setting)):
+async def main(settings: Settings = Depends(get_settings)):
     """
     The main function to populate the database with movie data.
 

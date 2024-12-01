@@ -1,12 +1,29 @@
 from fastapi import Depends, HTTPException, Request, status
 
-from apps.accounts.dependencies import get_accounts_service, get_auth_service
+from apps.accounts.dependencies import (
+    get_accounts_service,
+    get_auth_service
+)
 from apps.accounts.dto import UserProfileCreateDTO
-from apps.accounts.exceptions import UserAlreadyExists, ActivationError, InvalidCredentialsError, TokenExpiredError, \
-    InvalidTokenError, UserProfileAlreadyExists
-from apps.accounts.interfaces import InterfaceAccountsServices, InterfaceAuthService
-from apps.accounts.schemas import UserCreateSerializer, ProfileCreateSerializer, TokenPairRequestSerializer, \
-    TokenAccessRequestSerializer, TokenPairResponseSerializer, ProfileResponseSerializer
+from apps.accounts.exceptions import (
+    UserAlreadyExists,
+    ActivationError,
+    InvalidCredentialsError,
+    TokenExpiredError,
+    InvalidTokenError,
+    UserProfileAlreadyExists
+)
+from apps.accounts.interfaces import (
+    InterfaceAccountsService,
+    InterfaceAuthService)
+from apps.accounts.schemas import (
+    UserCreateRequestSchema,
+    ProfileCreateRequestSchema,
+    ProfileResponseSchema,
+    TokenPairRequestSchema,
+    TokenAccessRequestSchema,
+    TokenPairResponseSchema,
+)
 
 
 def get_token(request: Request):
@@ -18,9 +35,9 @@ def get_token(request: Request):
 
 
 async def create_user_controller(
-        user: UserCreateSerializer,
+        user: UserCreateRequestSchema,
         request: Request,
-        service: InterfaceAccountsServices = Depends(get_accounts_service)
+        service: InterfaceAccountsService = Depends(get_accounts_service)
 ):
     base_url = str(request.base_url)
     try:
@@ -35,7 +52,7 @@ async def create_user_controller(
 
 async def activate_user_controller(
         token: str,
-        service: InterfaceAccountsServices = Depends(get_accounts_service)
+        service: InterfaceAccountsService = Depends(get_accounts_service)
 ):
     try:
         user = await service.activate_user(token)
@@ -51,8 +68,8 @@ async def create_profile_controller(
         user_id: int,
         token: str = Depends(get_token),
         service_auth: InterfaceAuthService = Depends(get_auth_service),
-        service_accounts: InterfaceAccountsServices = Depends(get_accounts_service),
-        profile_data: ProfileCreateSerializer = Depends(ProfileCreateSerializer.from_form)
+        service_accounts: InterfaceAccountsService = Depends(get_accounts_service),
+        profile_data: ProfileCreateRequestSchema = Depends(ProfileCreateRequestSchema.from_form)
 ):
     try:
         token_user_id = await service_auth.get_user_id(token)
@@ -74,14 +91,14 @@ async def create_profile_controller(
         user_profile_dto = await service_accounts.create_user_profile(profile_dto)
     except UserProfileAlreadyExists as exception:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exception))
-    response_profile = ProfileResponseSerializer(**user_profile_dto._asdict())
+    response_profile = ProfileResponseSchema(**user_profile_dto._asdict())
     return response_profile
 
 
 async def login_controller(
-        login_data: TokenPairRequestSerializer,
+        login_data: TokenPairRequestSchema,
         service: InterfaceAuthService = Depends(get_auth_service)
-) -> TokenPairResponseSerializer:
+) -> TokenPairResponseSchema:
     try:
         token_pair = await service.login(login_data)
     except InvalidCredentialsError as exception:
@@ -90,7 +107,7 @@ async def login_controller(
 
 
 async def access_token_refresh_controller(
-        refresh_token: TokenAccessRequestSerializer,
+        refresh_token: TokenAccessRequestSchema,
         service: InterfaceAuthService = Depends(get_auth_service)
 ):
     try:

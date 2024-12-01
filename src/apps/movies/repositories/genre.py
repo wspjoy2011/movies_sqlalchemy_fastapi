@@ -1,13 +1,11 @@
-import asyncio
 from typing import List, Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from database.models.movies import Genre
-from database.session import get_session
 from database.utils import object_as_dict
-from dto.genre import GenreDTO
+from apps.movies.dto.genre import GenreDTO
 
 
 class GenreRepository:
@@ -49,32 +47,3 @@ class GenreRepository:
             await self._session.commit()
             return True
         return False
-
-
-
-async def main():
-    async with get_session() as session:
-        genre_repo = GenreRepository(session)
-
-        new_genre = await genre_repo.create_genre("Drama new")
-        print('#' * 10)
-        print("Created genre:", new_genre)
-        print('#' * 10)
-
-        genre = await genre_repo.get_genre(new_genre.id)
-        print('#' * 10)
-        print("Fetched genre:", genre)
-        print('#' * 10)
-
-        updated_genre = await genre_repo.update_genre(new_genre.id, "Romantic Drama")
-        print('#' * 10)
-        print("Updated genre:", updated_genre)
-        print('#' * 10)
-
-        success = await genre_repo.delete_genre(new_genre.id)
-        print('#' * 10)
-        print("Deleted genre:", "Success" if success else "Genre not found")
-        print('#' * 10)
-
-if __name__ == '__main__':
-    asyncio.run(main())

@@ -1,30 +1,31 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from apps.accounts.auth import JWTAuthManager
+from apps.accounts.handlers.files import AvatarFileHandler
 from apps.accounts.interfaces import (
-    InterfaceAuthManager,
-    InterfaceEmailSender,
     InterfaceUserRepository,
+    InterfaceUserProfileRepository,
     InterfaceActivationTokenRepository,
-    InterfaceAccountsServices,
-    InterfaceAuthService,
-    InterfaceUserProfileRepository
+    InterfaceEmailSender,
+    InterfaceAuthManager,
+    InterfaceAvatarFileHandler,
+    InterfaceAccountsService,
+    InterfaceAuthService
 )
 from apps.accounts.repositories import (
     ActivationTokenRepository,
-    UserRepository, UserProfileRepository
+    UserRepository,
+    UserProfileRepository
 )
 from apps.accounts.notifications import EmailSenderGmail
+from apps.accounts.security.password_managers import JWTAuthManager
 from apps.accounts.services import (
     AuthService,
-    AccountsServices
+    AccountsService
 )
-
+from apps.accounts.email_templates import REGISTRATION_HTML_CONTENT
 from database.session import get_session as get_db
-from config.settings import get_settings, Settings
-from apps.accounts.handlers.file_handlers import AvatarFileHandler
-from apps.accounts.handlers.interfaces import InterfaceAvatarFileHandler
+from config.dependencies import get_settings, Settings
 
 
 
@@ -46,8 +47,16 @@ async def get_activation_token_repository(
     return ActivationTokenRepository(db)
 
 
-async def get_email_sender() -> InterfaceEmailSender:
-    return EmailSenderGmail()
+async def get_email_sender(
+    settings: Settings = Depends(get_settings)
+) -> InterfaceEmailSender:
+    return EmailSenderGmail(
+        hostname=settings.EMAIL_HOST,
+        port=settings.EMAIL_PORT,
+        email=settings.EMAIL_HOST_USER,
+        password=settings.EMAIL_HOST_PASSWORD,
+        activation_template=REGISTRATION_HTML_CONTENT
+    )
 
 
 async def get_auth_manager() -> InterfaceAuthManager:
@@ -66,8 +75,8 @@ async def get_accounts_service(
         repo_activate_token: InterfaceActivationTokenRepository = Depends(get_activation_token_repository),
         email_sender: InterfaceEmailSender = Depends(get_email_sender),
         avatar_file_handler: InterfaceAvatarFileHandler = Depends(get_avatar_file_handler)
-) -> InterfaceAccountsServices:
-    return AccountsServices(
+) -> InterfaceAccountsService:
+    return AccountsService(
         repo_user=repo_user,
         repo_profile=repo_profile,
         repo_activation_token=repo_activate_token,

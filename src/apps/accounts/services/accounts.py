@@ -1,34 +1,30 @@
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from apps.accounts.dto import UserProfileCreateDTO, UserProfileDTO
+from apps.accounts.dto import (
+    UserProfileCreateDTO,
+    UserProfileDTO
+)
 from apps.accounts.exceptions import (
     UserAlreadyExists,
     ActivationError,
-    InvalidCredentialsError, UserProfileAlreadyExists
+    UserProfileAlreadyExists
 )
 from apps.accounts.interfaces import (
-    InterfaceAuthManager,
-    InterfaceAccountsServices,
-    InterfaceAuthService, InterfaceUserProfileRepository
-)
-from apps.accounts.repositories import (
+    InterfaceAccountsService,
     InterfaceUserRepository,
-    InterfaceActivationTokenRepository
+    InterfaceUserProfileRepository,
+    InterfaceActivationTokenRepository,
+    InterfaceEmailSender,
+    InterfaceAvatarFileHandler,
 )
-from apps.accounts.notifications import InterfaceEmailSender
 from apps.accounts.schemas import (
-    UserCreateSerializer,
-    UserResponseSerializer,
-    TokenPairRequestSerializer,
-    TokenPairResponseSerializer,
-    TokenAccessRequestSerializer,
-    TokenAccessResponseSerializer
+    UserCreateRequestSchema,
+    UserResponseSchema,
 )
-from apps.accounts.handlers.interfaces import InterfaceAvatarFileHandler
 
 
-class AccountsServices(InterfaceAccountsServices):
+class AccountsService(InterfaceAccountsService):
     def __init__(self,
                  repo_user: InterfaceUserRepository,
                  repo_profile: InterfaceUserProfileRepository,
@@ -41,7 +37,7 @@ class AccountsServices(InterfaceAccountsServices):
         self._email_sender = email_sender
         self._file_handler = file_handler
 
-    async def create_user(self, user: UserCreateSerializer, base_url: str) -> UserResponseSerializer:
+    async def create_user(self, user: UserCreateRequestSchema, base_url: str) -> UserResponseSchema:
         if await self._repo_user.is_username_exists(user.username):
             raise UserAlreadyExists("Username already exists")
 
@@ -59,7 +55,7 @@ class AccountsServices(InterfaceAccountsServices):
 
         return user
 
-    async def activate_user(self, token: str) -> UserResponseSerializer:
+    async def activate_user(self, token: str) -> UserResponseSchema:
         token_data = await self._repo_activation_token.get_token_data(token)
         if not token_data:
             raise ActivationError("Invalid activation token")
@@ -100,44 +96,3 @@ class AccountsServices(InterfaceAccountsServices):
         now = datetime.now(timezone.utc)
         difference = now - token_created
         return difference > timedelta(days=1)
-
-
-class AuthService(InterfaceAuthService):
-    def __init__(
-            self,
-            repo_user: InterfaceUserRepository,
-            auth_manager: InterfaceAuthManager
-    ):
-        self._repo_user = repo_user
-        self._auth_manager = auth_manager
-
-    async def login(self, login_data: TokenPairRequestSerializer) -> TokenPairResponseSerializer:
-        user = await self._repo_user.authenticate_user(str(login_data.email), login_data.password)
-        if not user:
-            raise InvalidCredentialsError
-        access_token = self._auth_manager.create_access_token(
-            data={"user_id": user.id}
-        )
-        refresh_token = self._auth_manager.create_refresh_token(
-            data={"user_id": user.id}
-        )
-        return TokenPairResponseSerializer(refresh_token=refresh_token, access_token=access_token)
-
-    async def refresh_access_token(self, refresh: TokenAccessRequestSerializer) -> TokenAccessResponseSerializer:
-        self._auth_manager.verify_refresh_token_or_raise(refresh.refresh_token)
-
-        refresh_token_data = self._auth_manager.decode_refresh_token(refresh.refresh_token)
-        access_token = self._auth_manager.create_access_token(data={"user_id": refresh_token_data["user_id"]})
-        return TokenAccessResponseSerializer(access_token=access_token)
-
-    async def get_user_id(self, token: str) -> int:
-        self._auth_manager.verify_access_token_or_raise(token)
-
-        access_token_data = self._auth_manager.decode_access_token(token)
-        user_id = access_token_data["user_id"]
-
-        is_user_exists = await self._repo_user.is_user_id_exists(user_id)
-        if is_user_exists is None:
-            raise InvalidCredentialsError
-
-        return user_id

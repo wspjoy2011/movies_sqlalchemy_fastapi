@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-from config.settings import get_settings
+from config.dependencies import get_settings
 from database.listeners import movies # noqa: F401
 
 settings = get_settings()

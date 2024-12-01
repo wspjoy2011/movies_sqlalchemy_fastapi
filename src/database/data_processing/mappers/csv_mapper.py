@@ -5,7 +5,6 @@ import random
 import pandas as pd
 from tqdm import tqdm
 
-from config.settings import PATH_TO_MOVIES_CSV_FILE
 from apps.movies.dto.movie import MoviesDTO, MovieDTO
 
 
@@ -169,14 +168,4 @@ class MovieCSVMapper:
         """
         random_price = round(random.uniform(min_price, max_price), 2)
         return Decimal(f"{random_price}")
-
-
-if __name__ == '__main__':
-    mapper = MovieCSVMapper(PATH_TO_MOVIES_CSV_FILE)
-    movies = mapper.read_csv_and_map_to_dto()
-    print(movies)
-    # movies_duplicates = parser.check_duplicates()
-    # for movie in movies_duplicates.movies:
-    #     print(movie.name, movie.year, movie.imdb, movie.description)
-
 

@@ -3,25 +3,14 @@ from decimal import Decimal
 from typing import Union
 from uuid import UUID
 
-import aioredis
+from aioredis import Redis
 from fastapi import Query, Depends
 
 from apps.movies.repositories.movie import MovieRepository
-from config.settings import get_settings, Settings
+from config.dependencies import get_settings
 from database.session import get_session
 from apps.movies.services.movies import MovieService
 from apps.movies.schemas import MovieListSchemaResponse, MovieSchema
-
-
-async def get_redis_connection(settings: Settings = Depends(get_settings)) -> aioredis.Redis:
-    """
-    Establish and return a connection to Redis.
-    """
-    return await aioredis.from_url(
-        f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}",
-        password=settings.REDIS_PASSWORD,
-        decode_responses=True
-    )
 
 
 def json_serializer(obj: Union[UUID, Decimal]) -> Union[str, float]:
@@ -48,7 +37,8 @@ def json_serializer(obj: Union[UUID, Decimal]) -> Union[str, float]:
 
 async def get_all_movies(
     page: int = Query(1, ge=1, description="Page number, must be 1 or greater"),
-    per_page: int = Query(10, ge=1, le=20, description="Number of items per page, must be between 1 and 20")
+    per_page: int = Query(10, ge=1, le=20, description="Number of items per page, must be between 1 and 20"),
+    redis: Redis = Depends(get_settings)
 ) -> MovieListSchemaResponse:
     """
     Endpoint to retrieve all movies with pagination, with Redis caching.
@@ -61,8 +51,6 @@ async def get_all_movies(
         MovieListSchemaResponse: The paginated list of movies and the total count.
     """
     cache_key = f"movies:page:{page}:per_page:{per_page}"
-
-    redis = await get_redis_connection()
 
     cached_data = await redis.get(cache_key)
     if cached_data:

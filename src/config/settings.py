@@ -27,8 +27,4 @@ class Settings(BaseSettings):
     EMAIL_HOST_USER: str
     EMAIL_HOST_PASSWORD: str
 
-    # model_config = SettingsConfigDict(env_file=BASE_DIR.parent / '.env', extra='ignore')
-
-
-def get_settings() -> BaseSettings:
-    return Settings()
+    # model_config = SettingsConfigDict(env_file=BASE_DIR.parent / '.env', extra='ignore', case_sensitive=True)

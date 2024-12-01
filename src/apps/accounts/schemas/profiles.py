@@ -1,53 +1,15 @@
 from datetime import date
 
 from fastapi import Form, UploadFile, File, HTTPException
-from pydantic import BaseModel, field_validator, EmailStr
+from pydantic import BaseModel, field_validator
 
 from apps.accounts.validators import (
-    validate_username,
-    validate_password_strength,
-    validate_name,
-    validate_image, validate_gender, validate_birth_date)
+    validate_image,
+    validate_gender,
+    validate_birth_date
+)
 
-
-class UserCreateSerializer(BaseModel):
-    username: str
-    email: EmailStr
-    password: str
-    first_name: str
-    last_name: str
-
-    @field_validator('username')
-    @classmethod
-    def validate_username_field(cls, username: str) -> str:
-        validate_username(username)
-        return username
-
-    @field_validator("first_name", "last_name")
-    @classmethod
-    def validate_name_field(cls, name: str) -> str:
-        validate_name(name)
-        return name
-
-    @field_validator("password")
-    @classmethod
-    def validate_password_field(cls, password: str) -> str:
-        validate_password_strength(password)
-        return password
-
-
-class UserResponseSerializer(BaseModel):
-    id: int
-    username: str
-    email: EmailStr
-    first_name: str
-    last_name: str
-    is_active: bool
-    is_staff: bool
-    is_superuser: bool
-
-
-class ProfileCreateSerializer(BaseModel):
+class ProfileCreateRequestSchema(BaseModel):
     gender: str
     date_of_birth: date
     info: str
@@ -60,7 +22,7 @@ class ProfileCreateSerializer(BaseModel):
         date_of_birth: date = Form(...),
         info: str = Form(...),
         avatar: UploadFile = File(...)
-    ) -> "ProfileCreateSerializer":
+    ) -> "ProfileCreateRequestSchema":
         return cls(gender=gender, date_of_birth=date_of_birth, info=info, avatar=avatar)
 
     @field_validator("avatar")
@@ -100,28 +62,10 @@ class ProfileCreateSerializer(BaseModel):
             })
 
 
-class ProfileResponseSerializer(BaseModel):
+class ProfileResponseSchema(BaseModel):
     id: int
     user_id: int
     gender: str
     date_of_birth: date
     info: str
     avatar: str
-
-
-class TokenPairRequestSerializer(BaseModel):
-    email: EmailStr
-    password: str
-
-
-class TokenPairResponseSerializer(BaseModel):
-    access_token: str
-    refresh_token: str
-
-
-class TokenAccessRequestSerializer(BaseModel):
-    refresh_token: str
-
-
-class TokenAccessResponseSerializer(BaseModel):
-    access_token: str
