@@ -12,7 +12,9 @@ if [ ! -d "/usr/src/fastapi/alembic/versions" ]; then
 fi
 
 # Check if the alembic_version table exists in the database
-if ! psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "\dt" | grep -q "alembic_version"; then
+export PGPASSWORD="$POSTGRES_PASSWORD"
+
+if ! psql -h "$POSTGRES_HOST" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "\dt" | grep -q "alembic_version"; then
     echo "Alembic version table not found. Applying all migrations..."
 
     # Check if there are existing migration files

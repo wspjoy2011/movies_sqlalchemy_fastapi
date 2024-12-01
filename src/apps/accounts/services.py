@@ -55,7 +55,7 @@ class AccountsServices(InterfaceAccountsServices):
 
         fullname = f'{user.first_name.capitalize()} {user.last_name.capitalize()}'
         activation_link = f"{base_url}api/v1/accounts/users/activate/{token}/"
-        await self._email_sender.send_activation_email(user.email, activation_link, fullname)
+        await self._email_sender.send_activation_email(str(user.email), activation_link, fullname)
 
         return user
 
@@ -112,7 +112,7 @@ class AuthService(InterfaceAuthService):
         self._auth_manager = auth_manager
 
     async def login(self, login_data: TokenPairRequestSerializer) -> TokenPairResponseSerializer:
-        user = await self._repo_user.authenticate_user(login_data.email, login_data.password)
+        user = await self._repo_user.authenticate_user(str(login_data.email), login_data.password)
         if not user:
             raise InvalidCredentialsError
         access_token = self._auth_manager.create_access_token(

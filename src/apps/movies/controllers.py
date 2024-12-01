@@ -1,6 +1,6 @@
 import json
 from decimal import Decimal
-from typing import Any, Union
+from typing import Union
 from uuid import UUID
 
 import aioredis
