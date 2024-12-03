@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 
 from database.models.movies import Movie, Genre, Director, Star, Certification, MovieGenre, MovieDirector, MovieStar
-from database.session import get_session
+from database.session import get_session_context
 
 
 class MovieDatabaseCleaner:
@@ -13,7 +13,7 @@ class MovieDatabaseCleaner:
     A class responsible for cleaning all movie-related data from the database.
 
     Attributes:
-        session (AsyncSession): The asynchronous database session used for operations.
+        _session (AsyncSession): The asynchronous database session used for operations.
     """
 
     def __init__(self, session: AsyncSession):
@@ -56,14 +56,14 @@ class MovieDatabaseCleaner:
             raise
 
 
-async def main():
+async def main() -> None:
     """
     The main function to clean all movie-related data from the database.
 
     It creates an instance of MovieDatabaseCleaner and calls the `clean_all_movie_data` method
     to remove all data related to movies, genres, directors, stars, and certifications.
     """
-    async with get_session() as session:
+    async with get_session_context() as session:
         cleaner = MovieDatabaseCleaner(session)
         await cleaner.clean_all_movie_data()
 

@@ -5,7 +5,7 @@ from typing import Optional, List
 from uuid import UUID
 
 
-class MovieSchema(BaseModel):
+class MovieResponseSchema(BaseModel):
     id: int
     uuid: UUID
     name: str
@@ -23,6 +23,6 @@ class MovieSchema(BaseModel):
         from_attributes = True
 
 
-class MovieListSchemaResponse(BaseModel):
-    movies: List[MovieSchema]
+class MovieListResponseSchema(BaseModel):
+    movies: List[MovieResponseSchema]
     total: int

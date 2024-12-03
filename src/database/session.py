@@ -19,11 +19,28 @@ DATABASE_URL_SYNC = f"postgresql://{settings.POSTGRES_USER}:{settings.POSTGRES_P
 engine_sync = create_engine(DATABASE_URL_SYNC, echo=True)
 
 
-@asynccontextmanager
-async def get_session() -> AsyncSessionLocal:
+async def get_session() -> AsyncSession:
     async with AsyncSessionLocal() as session:
         try:
             yield session
         finally:
             await session.close()
 
+
+@asynccontextmanager
+async def get_session_context() -> AsyncSession:
+    """
+    Provides an asynchronous session for use in scripts or standalone contexts.
+
+    This function wraps the existing `get_session` generator to allow its use
+    as a standard async context manager.
+
+    Yields:
+        AsyncSession: An active asynchronous database session.
+    """
+    generator = get_session()
+    session = await generator.__anext__()
+    try:
+        yield session
+    finally:
+        await generator.aclose()

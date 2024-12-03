@@ -5,14 +5,14 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
+from apps.movies import MovieRepositoryInterface
 from database.exceptions.movies import CreateMovieError
 from database.models.movies import Movie, Certification
-from database.session import get_session
 from apps.movies.dto.movie import MovieEntity, MovieDTO, CertificationEntity
 from database.utils import object_as_dict
 
 
-class MovieRepository:
+class MovieRepository(MovieRepositoryInterface):
     def __init__(self, session: AsyncSession):
         self._session = session
 

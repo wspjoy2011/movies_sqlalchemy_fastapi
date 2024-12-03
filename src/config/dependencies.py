@@ -1,8 +1,15 @@
-from aioredis import Redis, from_url
 from fastapi import Depends
+from aioredis import Redis
 from pydantic_settings import BaseSettings
 
+
 from config.settings import Settings
+from cache import (
+    get_redis_connection,
+    CacheManagerInterface,
+    RedisCacheManager,
+    RedisConnectionSettingsDTO
+)
 
 
 def get_settings() -> BaseSettings:
@@ -15,21 +22,48 @@ def get_settings() -> BaseSettings:
     return Settings()
 
 
-async def get_redis_connection(settings: Settings = Depends(get_settings)) -> Redis:
+def _get_redis_connection_settings(settings: Settings = Depends(get_settings)) -> RedisConnectionSettingsDTO:
     """
-    Create an asynchronous Redis connection.
+    Dependency to retrieve Redis connection settings as a DTO.
 
     Args:
-        settings (Settings): The application settings, injected via dependency.
+        settings (Settings): Application settings.
 
     Returns:
-        Redis: An active Redis connection.
-
-    Raises:
-        RedisError: If the connection to the Redis server fails.
+        RedisConnectionSettingsDTO: Redis connection settings.
     """
-    return await from_url(
-        f"redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}",
-        password=settings.REDIS_PASSWORD,
-        decode_responses=True
+    return RedisConnectionSettingsDTO(
+        REDIS_HOST=settings.REDIS_HOST,
+        REDIS_PASSWORD=settings.REDIS_PASSWORD,
+        REDIS_PORT=settings.REDIS_PORT,
     )
+
+
+async def _get_redis_connection_instance(
+    settings_dto: RedisConnectionSettingsDTO = Depends(_get_redis_connection_settings),
+) -> Redis:
+    """
+    Dependency to create and return an asynchronous Redis connection.
+
+    Args:
+        settings_dto (RedisConnectionSettingsDTO): Redis connection settings DTO.
+
+    Returns:
+        Redis: An active Redis connection instance.
+    """
+    return await get_redis_connection(settings_dto)
+
+
+def get_cache_manager(
+    redis: Redis = Depends(_get_redis_connection_instance),
+) -> CacheManagerInterface:
+    """
+    Dependency to create and return a cache manager instance.
+
+    Args:
+        redis (Redis): An active Redis connection instance.
+
+    Returns:
+        CacheManagerInterface: A cache manager instance.
+    """
+    return RedisCacheManager(redis)

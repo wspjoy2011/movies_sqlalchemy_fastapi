@@ -7,7 +7,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError, OperationalError, Da
 
 from config.dependencies import Settings, get_settings
 from database.models.movies import Genre, Director, Star, Certification, Movie, MovieGenre, MovieDirector, MovieStar
-from database.session import get_session
+from database.session import get_session_context
 from apps.movies.dto.movie import MoviesDTO
 from database.data_processing.mappers.csv_mapper import MovieCSVMapper
 
@@ -18,7 +18,7 @@ class MovieDatabaseSaver:
     A class responsible for saving movie-related data to the database.
 
     Attributes:
-        session (AsyncSession): The asynchronous database session used for operations.
+        _session (AsyncSession): The asynchronous database session used for operations.
     """
 
     def __init__(self, session: AsyncSession):
@@ -132,15 +132,16 @@ class MovieDatabaseSaver:
             raise
 
 
-async def main(settings: Settings = Depends(get_settings)):
+async def main(
+    settings: Settings = Depends(get_settings),
+) -> None:
     """
     The main function to populate the database with movie data.
 
     It reads data from a CSV file, maps it to a DTO, and saves it to the database.
     Before saving, it checks if the database is already populated to avoid duplication.
     """
-
-    async with get_session() as session:
+    async with get_session_context() as session:
         saver = MovieDatabaseSaver(session)
         if await saver.is_database_populated():
             print("Database is already populated. Skipping data insertion.")
@@ -153,4 +154,3 @@ async def main(settings: Settings = Depends(get_settings)):
 
 if __name__ == '__main__':
     asyncio.run(main())
-
