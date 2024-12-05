@@ -1,9 +1,11 @@
+import os
+
 from fastapi import Depends
 from aioredis import Redis
 from pydantic_settings import BaseSettings
 
 
-from config.settings import Settings
+from config.settings import Settings, TestingSettings
 from cache import (
     get_redis_connection,
     CacheManagerInterface,
@@ -19,6 +21,9 @@ def get_settings() -> BaseSettings:
     Returns:
         BaseSettings: The settings instance, providing configuration values for the application.
     """
+    environment = os.getenv("ENVIRONMENT", "developing")
+    if environment == "testing":
+        return TestingSettings()
     return Settings()
 
 

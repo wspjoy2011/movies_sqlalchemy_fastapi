@@ -1,5 +1,6 @@
 from pathlib import Path
-from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -27,4 +28,13 @@ class Settings(BaseSettings):
     EMAIL_HOST_USER: str
     EMAIL_HOST_PASSWORD: str
 
-    # model_config = SettingsConfigDict(env_file=BASE_DIR.parent / '.env', extra='ignore', case_sensitive=True)
+
+class TestingSettings(BaseSettings):
+    # Postgresql
+    POSTGRES_USER: str = "test_user"
+    POSTGRES_PASSWORD: str = "test_password"
+    POSTGRES_HOST: str = "localhost"
+    POSTGRES_DB_PORT: int = 5432
+    POSTGRES_DB: str = "test_db"
+
+
